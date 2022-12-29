@@ -5,7 +5,3 @@ type User struct {
 	Username string `json:"username" gorm:"unique"`
 	Password string `json:"password" gorm:"unique"`
 }
-
-type UserRepository interface {
-	FindAll() ([]User, error)
-}

@@ -1,13 +1,12 @@
 package infra
 
 import (
-	"fmt"
+	"database/sql"
 	"log"
 	"os"
 
+	"github.com/go-sql-driver/mysql"
 	"gopkg.in/yaml.v2"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 )
 
 type DBConfig struct {
@@ -35,20 +34,45 @@ func LoadConfig(path string) Config {
 	return config
 }
 
-func DBConnect() *gorm.DB {
+// func ConnectDatabase() *gorm.DB {
+// 	conn := LoadConfig("infra/config.yaml")
+// 	dsn := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s", conn.Mysqlconf.Usernm, conn.Mysqlconf.Passwd, conn.Mysqlconf.Addr, conn.Mysqlconf.Database)
+// 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+
+// 	sqlDB, err := db.DB()
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	sqlDB.SetMaxIdleConns(10)
+// 	sqlDB.SetMaxOpenConns(100)
+
+// 	defer sqlDB.Close()
+
+// 	return db
+// }
+
+func GetConnector() *sql.DB {
 	conn := LoadConfig("infra/config.yaml")
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s", conn.Mysqlconf.Usernm, conn.Mysqlconf.Passwd, conn.Mysqlconf.Addr, conn.Mysqlconf.Database)
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	cfg := mysql.Config{
+		User:                 conn.Mysqlconf.Usernm,
+		Passwd:               conn.Mysqlconf.Passwd,
+		Net:                  "tcp",
+		Addr:                 conn.Mysqlconf.Addr,
+		Collation:            "utf8mb4_general_ci",
+		AllowNativePasswords: true,
+		CheckConnLiveness:    true,
+		DBName:               "users",
+	}
+
+	connector, err := mysql.NewConnector(&cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	sqlDB, err := db.DB()
-	if err != nil {
-		log.Fatal(err)
-	}
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(100)
+	db := sql.OpenDB(connector)
 
 	return db
 }
